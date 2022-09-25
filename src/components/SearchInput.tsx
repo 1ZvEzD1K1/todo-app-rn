@@ -11,6 +11,7 @@ const SearchInput: FC<TSearchInput> = ({search, setSearch}) => {
   return (
     <Container>
       <TextInputComponent
+        type="text"
         value={search}
         onChangeText={setSearch}
         placeholder="Search...?"

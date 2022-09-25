@@ -18,11 +18,13 @@ const AddTodoInput: FC<TAddTodoInput> = ({
   return (
     <Container>
       <TextInputComponent
+        type="text"
         value={title}
         placeholder="Input title"
         onChangeText={setTitle}
       />
       <TextInputComponent
+        type="text"
         value={description}
         placeholder="Input description"
         onChangeText={setDescription}
