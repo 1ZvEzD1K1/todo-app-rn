@@ -1,5 +1,5 @@
 import React, {FC, useState} from 'react';
-import {FlatList} from 'react-native';
+import {FlatList, ScrollView} from 'react-native';
 import {useDispatch} from 'react-redux';
 //@ts-ignore
 import styled from 'styled-components/native';
@@ -72,55 +72,59 @@ const TodosScreen: FC = ({navigation}: any) => {
   };
 
   return (
-    <Container>
-      <FunctionalBar>
-        <Buttons>
-          <FilterButtons
-            variants={variants}
-            selectFilterHandler={selectFilterHandler}
-          />
-          <AddButton goToAddTodoScreen={goToAddTodoScreen} />
-        </Buttons>
-        <SearchDel>
-          <SearchInput search={search} setSearch={setSearch} />
-          <DelAllButton delAllTodos={delAllTodos} />
-        </SearchDel>
-      </FunctionalBar>
-      <TodosList>
-        {todos.length < 1 ? (
-          <TextCenter>No todos =(</TextCenter>
-        ) : (
-          <FlatList
-            data={todos.filter(e => {
-              if (filter == 'completed') {
+    <ScrollView>
+      <Container>
+        <FunctionalBar>
+          <Buttons>
+            <FilterButtons
+              variants={variants}
+              selectFilterHandler={selectFilterHandler}
+            />
+            <AddButton goToAddTodoScreen={goToAddTodoScreen} />
+          </Buttons>
+          <SearchDel>
+            <SearchInput search={search} setSearch={setSearch} />
+            <DelAllButton delAllTodos={delAllTodos} />
+          </SearchDel>
+        </FunctionalBar>
+        <TodosList>
+          {todos.length < 1 ? (
+            <TextCenter>No todos =(</TextCenter>
+          ) : (
+            <FlatList
+              data={todos.filter(e => {
+                if (filter == 'completed') {
+                  return (
+                    e.isDone &&
+                    e.title.toLowerCase().includes(search.toLowerCase())
+                  );
+                }
+                if (filter == 'inprogress') {
+                  return (
+                    !e.isDone &&
+                    e.title.toLowerCase().includes(search.toLowerCase())
+                  );
+                }
                 return (
-                  e.isDone &&
-                  e.title.toLowerCase().includes(search.toLowerCase())
+                  e && e.title.toLowerCase().includes(search.toLowerCase())
                 );
-              }
-              if (filter == 'inprogress') {
+              })}
+              keyExtractor={todo => todo.id}
+              renderItem={({item}) => {
                 return (
-                  !e.isDone &&
-                  e.title.toLowerCase().includes(search.toLowerCase())
+                  <Todo
+                    key={item.id}
+                    {...item}
+                    setDoneHandler={setDoneHandler}
+                    delTodoHandler={delTodoHandler}
+                  />
                 );
-              }
-              return e && e.title.toLowerCase().includes(search.toLowerCase());
-            })}
-            keyExtractor={todo => todo.id}
-            renderItem={({item}) => {
-              return (
-                <Todo
-                  key={item.id}
-                  {...item}
-                  setDoneHandler={setDoneHandler}
-                  delTodoHandler={delTodoHandler}
-                />
-              );
-            }}
-          />
-        )}
-      </TodosList>
-    </Container>
+              }}
+            />
+          )}
+        </TodosList>
+      </Container>
+    </ScrollView>
   );
 };
 
