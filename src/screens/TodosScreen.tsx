@@ -1,5 +1,5 @@
-import React, {FC, useState} from 'react';
-import {FlatList, ScrollView} from 'react-native';
+import React, {FC, Fragment, useEffect, useState} from 'react';
+import {FlatList, Text} from 'react-native';
 import {useDispatch} from 'react-redux';
 //@ts-ignore
 import styled from 'styled-components/native';
@@ -21,6 +21,7 @@ export type TVariantObj = {
 
 const TodosScreen: FC = ({navigation}: any) => {
   const dispatch = useDispatch();
+  const todos = useTypedSelector(state => state.todos.todos);
   const [variants, setVariants] = useState<TVariantObj[]>([
     {
       label: 'ALL',
@@ -40,8 +41,8 @@ const TodosScreen: FC = ({navigation}: any) => {
   ]);
   const [filter, setFilter] = useState<string>(variants[0].value);
   const [search, setSearch] = useState<string>('');
-
-  const todos = useTypedSelector(state => state.todos.todos);
+  const [page, setPage] = useState<number>(1);
+  const [pages, setPages] = useState<number[]>();
 
   const selectFilterHandler = (value: string): void => {
     setVariants(prev => {
@@ -53,6 +54,7 @@ const TodosScreen: FC = ({navigation}: any) => {
       });
     });
     setFilter(value);
+    setPage(1);
   };
 
   const goToAddTodoScreen = (): void => {
@@ -71,44 +73,76 @@ const TodosScreen: FC = ({navigation}: any) => {
     dispatch(delTodo(id));
   };
 
+  const setPageHandler = (id: number): void => {
+    setPage(id);
+  };
+
+  useEffect(() => {
+    setPages(() => {
+      let res: number[] = [];
+      let pag: number = Math.ceil(
+        todos.filter(e => {
+          if (filter == 'completed') {
+            return (
+              e.isDone && e.title.toLowerCase().includes(search.toLowerCase())
+            );
+          }
+          if (filter == 'inprogress') {
+            return (
+              !e.isDone && e.title.toLowerCase().includes(search.toLowerCase())
+            );
+          }
+          return e && e.title.toLowerCase().includes(search.toLowerCase());
+        }).length / 5,
+      );
+
+      for (let i = 1; i <= pag; i++) {
+        res.push(i);
+      }
+      return res;
+    });
+  }, [todos, search, filter]);
+
   return (
-    <ScrollView>
-      <Container>
-        <FunctionalBar>
-          <Buttons>
-            <FilterButtons
-              variants={variants}
-              selectFilterHandler={selectFilterHandler}
-            />
-            <AddButton goToAddTodoScreen={goToAddTodoScreen} />
-          </Buttons>
-          <SearchDel>
-            <SearchInput search={search} setSearch={setSearch} />
-            <DelAllButton delAllTodos={delAllTodos} />
-          </SearchDel>
-        </FunctionalBar>
-        <TodosList>
-          {todos.length < 1 ? (
-            <TextCenter>No todos =(</TextCenter>
-          ) : (
+    <Container>
+      <FunctionalBar>
+        <Buttons>
+          <FilterButtons
+            variants={variants}
+            selectFilterHandler={selectFilterHandler}
+          />
+          <AddButton goToAddTodoScreen={goToAddTodoScreen} />
+        </Buttons>
+        <SearchDel>
+          <SearchInput search={search} setSearch={setSearch} />
+          <DelAllButton delAllTodos={delAllTodos} />
+        </SearchDel>
+      </FunctionalBar>
+      <TodosList>
+        {todos.length < 1 ? (
+          <TextCenter>No todos =(</TextCenter>
+        ) : (
+          <Fragment>
             <FlatList
-              data={todos.filter(e => {
-                if (filter == 'completed') {
+              data={todos
+                .filter(e => {
+                  if (filter == 'completed') {
+                    return (
+                      e.isDone &&
+                      e.title.toLowerCase().includes(search.toLowerCase())
+                    );
+                  }
+                  if (filter == 'inprogress') {
+                    return (
+                      !e.isDone &&
+                      e.title.toLowerCase().includes(search.toLowerCase())
+                    );
+                  }
                   return (
-                    e.isDone &&
-                    e.title.toLowerCase().includes(search.toLowerCase())
+                    e && e.title.toLowerCase().includes(search.toLowerCase())
                   );
-                }
-                if (filter == 'inprogress') {
-                  return (
-                    !e.isDone &&
-                    e.title.toLowerCase().includes(search.toLowerCase())
-                  );
-                }
-                return (
-                  e && e.title.toLowerCase().includes(search.toLowerCase())
-                );
-              })}
+                })
+                .slice(page * 5 - 5, page * 5)}
               keyExtractor={todo => todo.id}
               renderItem={({item}) => {
                 return (
@@ -121,10 +155,24 @@ const TodosScreen: FC = ({navigation}: any) => {
                 );
               }}
             />
-          )}
-        </TodosList>
-      </Container>
-    </ScrollView>
+            <PaginationBox>
+              {pages?.map(pageNumb => {
+                return (
+                  <Pagination
+                    style={{
+                      backgroundColor:
+                        page == pageNumb ? 'lawngreen' : 'yellow',
+                    }}
+                    onPress={() => setPageHandler(pageNumb)}>
+                    <Text>{pageNumb}</Text>
+                  </Pagination>
+                );
+              })}
+            </PaginationBox>
+          </Fragment>
+        )}
+      </TodosList>
+    </Container>
   );
 };
 
@@ -170,4 +218,22 @@ const TextCenter = styled.Text`
   width: 100%;
   text-align: center;
   margin: 30px 0 0 0;
+`;
+
+const PaginationBox = styled.View`
+  display: flex;
+  margin-top: 20px;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+`;
+
+const Pagination = styled.TouchableOpacity`
+  height: 40px;
+  width: 40px;
+  border-radius: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 5px;
 `;
